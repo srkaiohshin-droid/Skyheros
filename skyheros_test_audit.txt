@@ -1,0 +1,92 @@
+﻿========== AUDITORIA SKYHEROS ==========
+Projeto: C:\Users\srkai\Documents\Load mods mcp\Skyheros
+Data: 2026-10-17 19:31:30
+
+========== 1. CONFIGURACAO GRADLE ==========
+
+--- build.gradle ---
+12: archivesName = mod_id
+78: "${mod_id}" {
+86: property 'forge.enabledGameTestNamespaces', mod_id
+90: property 'forge.enabledGameTestNamespaces', mod_id
+98: property 'forge.enabledGameTestNamespaces', mod_id
+106: args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+114: repositories {
+115: // Put repositories for dependencies here
+118: // If you have mod jar dependencies in ./libs, you can declare them as a repository like so.
+119: // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
+125: dependencies {
+131: minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+133: // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
+135: // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}")
+136: // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}")
+137: // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}")
+142: // implementation fg.deobf("blank:coolmod-${mc_version}:${coolmod_version}")
+145: // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+155: minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
+158: mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+172: 'Specification-Title'     : mod_id,
+175: 'Implementation-Title'    : project.name,
+176: 'Implementation-Version'  : project.jar.archiveVersion,
+177: 'Implementation-Vendor'   : mod_authors,
+178: 'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+198: repositories {
+
+--- gradle.properties ---
+10: minecraft_version=1.20.1
+14: minecraft_version_range=[1.20.1,1.21)
+45: mod_id=skyheros
+
+--- settings.gradle ---
+2: repositories {
+
+========== 2. CODIGO JAVA ==========
+Total de arquivos Java: 36
+
+--- src\main\java\br\com\skyheros\SkyherosMod.java ---
+11: @Mod(SkyherosMod.MOD_ID)
+
+--- src\main\java\br\com\skyheros\ability\AbilityCommands.java ---
+7: import net.minecraftforge.event.RegisterCommandsEvent;
+12: public static void register(RegisterCommandsEvent event) {
+
+--- src\main\java\br\com\skyheros\client\MovementKeyBindings.java ---
+11: @Mod.EventBusSubscriber(modid = SkyherosMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+
+--- src\main\java\br\com\skyheros\client\MovementKeyHandler.java ---
+12: @Mod.EventBusSubscriber(modid = SkyherosMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+
+--- src\main\java\br\com\skyheros\flight\FlightController.java ---
+12: @Mod.EventBusSubscriber(modid = "skyheros", bus = Mod.EventBusSubscriber.Bus.FORGE)
+
+--- src\main\java\br\com\skyheros\movement\MovementCommands.java ---
+9: import net.minecraftforge.event.RegisterCommandsEvent;
+13: @Mod.EventBusSubscriber(modid = "skyheros")
+18: public static void registerCommands(RegisterCommandsEvent event) {
+
+--- src\main\java\br\com\skyheros\movement\MovementKeyBindings.java ---
+37: @Mod.EventBusSubscriber(
+53: @Mod.EventBusSubscriber(
+
+--- src\main\java\br\com\skyheros\network\SkyherosNetwork.java ---
+package br.com.skyheros.network;
+
+import br.com.skyheros.SkyherosMod;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.network.NetworkDirection;
+
+public final class SkyherosNetwork {
+private static final String PROTOCOL = "1";
+public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+new ResourceLocation(SkyherosMod.MOD_ID, "main"),
+
+--- src\main\java\br\com\skyheros\power\PowerCommands.java ---
+7: import net.minecraftforge.event.RegisterCommandsEvent;
+14: public static void register(RegisterCommandsEvent event) {
+
+========== 3. RECURSOS DO MODELO ==========
+src\main\resources\assets\skyheros\animations\skyheros\flight_rig.animation.json
+src\main\resources\assets\skyheros\geo\skyheros\flight_rig.geo.json
+src\main\resources\assets\skyheros\textures\entity\flight_rig.png

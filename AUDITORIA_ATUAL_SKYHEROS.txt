@@ -1,0 +1,274 @@
+AUDITORIA ATUAL DO SKYHEROS
+Data: 2026-10-18 10:00:27
+Projeto: C:\Users\srkai\Documents\Load mods mcp\Skyheros
+
+TOTAL DE ARQUIVOS JAVA: 41
+
+========== CATALOGOS ==========
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerCatalog.java
+Linhas: 92
+IDs literais detectados por busca: 45
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+Amostra de IDs: aura, barrier, beam, bind, burst, construct, cosmic, dash, drain, earth, explosion, fire, flight, gravity, healing, ice, kinetic, leap, light, lightning
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\ComicPowerCatalog.java
+Linhas: 150
+IDs literais detectados por busca: 100
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+Amostra de IDs: comic_absorb_energy, comic_adaptive_armor, comic_adaptive_mutation, comic_air_cushion, comic_air_drift, comic_bioelectric_touch, comic_blinding_flash, comic_blizzard_field, comic_bone_armor, comic_burst_dash, comic_chain_lightning, comic_cosmic_aura, comic_darkness_field, comic_drone_scan, comic_eagle_vision, comic_electric_pulse, comic_ember_trail, comic_energy_barrier, comic_energy_bolt, comic_energy_burst
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerCatalog.java
+Linhas: 128
+IDs literais detectados por busca: 100
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+Amostra de IDs: spec_adaptive_evolution, spec_antimatter_ray, spec_aqua_breathing, spec_astral_projection, spec_battle_focus, spec_battle_hounds, spec_beast_mode, spec_bee_swarm, spec_berserker_form, spec_blizzard_domain, spec_bone_legion, spec_companion_spirits, spec_cosmic_avatar, spec_danger_instinct, spec_deep_sea_adaptation, spec_diamond_skin_form, spec_dimensional_shift, spec_earthquake_pulse, spec_elastic_form, spec_elemental_avatar
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\ComboPowerCatalog.java
+Linhas: 84
+IDs literais detectados por busca: 20
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+Amostra de IDs: combo_aurora_pulse, combo_earth_guard, combo_energy_recharge, combo_frostfire_burst, combo_gravity_crush, combo_kinetic_overdrive, combo_life_transfer, combo_phantom_dash, combo_plasma_barrage, combo_primal_awakening, combo_radiant_barrier, combo_shadow_bind, combo_solar_beam, combo_stormbreaker_strike, combo_summon_iron_sentinel, combo_team_regeneration, combo_thunder_field, combo_toxic_drain, combo_ultimate_singularity, combo_void_wave
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\AdvancedPowerCatalog.java
+Linhas: 138
+IDs literais detectados por busca: 0
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityCatalog.java
+Linhas: 130
+IDs literais detectados por busca: 47
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+Meta declarada encontrada: 1000
+Amostra de IDs: aura, barrier, beam, bind, burst, construct, crystal, dash, drain, dream, enhanced_leap, explosion, fire, flight, gravity, healing, kinetic, lava, leap, lunar
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\hero\HeroCatalog.java
+Linhas: 23
+IDs literais detectados por busca: 0
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\suit\SuitCatalog.java
+Linhas: 38
+IDs literais detectados por busca: 0
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityAudit.java
+Linhas: 34
+IDs literais detectados por busca: 0
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerRegistry.java
+Linhas: 44
+IDs literais detectados por busca: 0
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityRegistry.java
+Linhas: 31
+IDs literais detectados por busca: 0
+Observacao: essa busca nao substitui a contagem do registro em runtime.
+
+========== EXECUTORES E PROGRESSAO ==========
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerRuntime.java
+Linha 16: public static String execute(ServerPlayer player, PowerDefinition power) {
+Linha 17: String comboResult = CombatProgressionRuntime.execute(player, power);
+Linha 19: String specialResult = SpecialPowerRuntime.execute(player, power);
+Linha 183: String universalResult = UniversalPowerRuntime.execute(player, power);
+Linha 185: return "Poder sem executor universal.";
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\UniversalPowerRuntime.java
+Linha 21: public static String execute(ServerPlayer player, PowerDefinition power) {
+Linha 22: if (player == null || power == null) return null;
+Linha 36: int duration = (int) clamp(120 + power.getCooldownTicks() / 2.0, 100, 600);
+Linha 147: || hasAny(text, "projectile", "laser attack", "energy attack")) {
+Linha 263: if (hit == null) return null;
+Linha 264: if (!(hit.getEntity() instanceof LivingEntity target)) return null;
+Linha 265: if (!player.hasLineOfSight(target)) return null;
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerRuntime.java
+Linha 26: public static String execute(ServerPlayer player, PowerDefinition power) {
+Linha 28: if (!id.startsWith("spec_")) return null;
+Linha 124: if (hasAny(key, "kinetic_absorption", "energy_reserves")) {
+Linha 184: || hasAny(key, "energy_construct", "force_construct")) {
+Linha 365: if (hasAny(key, "vampiric", "energy_drain", "lifesteal")) {
+Linha 387: return null;
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\CombatProgressionRuntime.java
+Linha 23: public static String execute(ServerPlayer player, PowerDefinition power) {
+Linha 25: if (!id.startsWith("combo_")) return null;
+Linha 122: if (hasAny(key, "energy_recharge")) {
+Linha 123: String restored = PowerProgressionRuntime.restoreEnergy(player, 25);
+Linha 260: String universalResult = UniversalPowerRuntime.execute(player, power);
+Linha 262: return "Combo sem executor universal.";
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerProgressionRuntime.java
+Linha 10: private static final int MAX_ENERGY = 100;
+Linha 27: if (!data.contains("energy")) data.putInt("energy", MAX_ENERGY);
+Linha 28: if (!data.contains("last_energy_tick")) data.putLong("last_energy_tick", now);
+Linha 30: long last = data.getLong("last_energy_tick");
+Linha 32: int regenerated = (int)Math.min(MAX_ENERGY, elapsed / 20L);
+Linha 33: int energy = Math.min(MAX_ENERGY, data.getInt("energy") + regenerated);
+Linha 35: data.putInt("energy", energy);
+Linha 36: if (energy >= MAX_ENERGY) data.putLong("last_energy_tick", now);
+Linha 37: else data.putLong("last_energy_tick", last + regenerated * 20L);
+Linha 40: return energy;
+Linha 43: public static String checkEnergy(ServerPlayer player, PowerDefinition power) {
+Linha 45: int energy = refresh(player, data);
+Linha 46: int cost = Math.max(0, Math.min(MAX_ENERGY, (int)Math.ceil(power.getEnergyCost())));
+Linha 48: if (energy < cost) {
+Linha 49: return "Energia insuficiente: " + energy + "/" + MAX_ENERGY
+Linha 52: return null;
+Linha 55: public static String restoreEnergy(ServerPlayer player, int amount) {
+Linha 57: int energy = refresh(player, data);
+Linha 58: energy = Math.min(MAX_ENERGY, energy + Math.max(0, amount));
+Linha 59: data.putInt("energy", energy);
+Linha 60: data.putLong("last_energy_tick", player.level().getGameTime());
+Linha 62: return "Energia: " + energy + "/" + MAX_ENERGY + ".";
+Linha 65: public static String recordSuccessfulUse(ServerPlayer player, PowerDefinition power) {
+Linha 67: int energy = refresh(player, data);
+Linha 68: int cost = Math.max(0, Math.min(MAX_ENERGY, (int)Math.ceil(power.getEnergyCost())));
+Linha 69: energy = Math.max(0, energy - cost);
+Linha 70: data.putInt("energy", energy);
+Linha 71: data.putLong("last_energy_tick", player.level().getGameTime());
+Linha 74: CompoundTag mastery = data.getCompound("mastery");
+Linha 75: int uses = mastery.getInt(powerKey) + 1;
+Linha 76: mastery.putInt(powerKey, uses);
+Linha 77: data.put("mastery", mastery);
+Linha 80: String message = "Energia " + energy + "/" + MAX_ENERGY
+Linha 108: public static String checkAbilityEnergy(ServerPlayer player, int rawCost) {
+Linha 109: int cost = Math.max(0, Math.min(MAX_ENERGY, rawCost));
+... mais 17 correspondencias omitidas.
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerCommands.java
+Linha 12: private static final java.util.Map<java.util.UUID, java.util.Map<String, Long>> COOLDOWNS = new java.util.concurrent.ConcurrentHashMap<>();
+Linha 18: .then(Commands.argument("id", StringArgumentType.greedyString()).suggests(br.com.skyheros.command.CatalogSuggestions::powers)
+Linha 50: java.util.Map<String, Long> playerCooldowns =
+Linha 51: COOLDOWNS.computeIfAbsent(player.getUUID(),
+Linha 53: long readyAt = playerCooldowns.getOrDefault(selected.getId(), 0L);
+Linha 62: String energyError = PowerProgressionRuntime.checkEnergy(player, selected);
+Linha 63: if (energyError != null) {
+Linha 64: context.getSource().sendFailure(Component.literal(energyError));
+Linha 67: String result = PowerRuntime.execute(player, selected);
+Linha 79: if (!failed && selected.getCooldownTicks() > 0) {
+Linha 80: playerCooldowns.put(selected.getId(),
+Linha 81: now + selected.getCooldownTicks());
+Linha 85: progressMessage = PowerProgressionRuntime.recordSuccessfulUse(player, selected);
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityRuntime.java
+Linha 28: private static final Map<String, Long> COOLDOWNS =
+Linha 44: String cooldownKey = player.getUUID() + ":" + ability.id();
+Linha 45: long until = COOLDOWNS.getOrDefault(cooldownKey, 0L);
+Linha 53: int cost = energyCost(ability);
+Linha 54: String energyError = PowerProgressionRuntime.checkAbilityEnergy(player, cost);
+Linha 56: if (energyError != null) {
+Linha 57: player.sendSystemMessage(Component.literal(energyError));
+Linha 61: boolean success = execute(player, ability);
+Linha 70: COOLDOWNS.put(cooldownKey, now + ability.cooldownTicks());
+Linha 72: String progression = PowerProgressionRuntime.recordAbilityUse(
+Linha 80: private static int energyCost(AbilityDefinition ability) {
+Linha 82: "energyCost", "getEnergyCost", "energy", "getEnergy",
+Linha 102: if (!name.contains("energy") && !name.equals("cost")) {
+Linha 121: private static boolean execute(ServerPlayer player, AbilityDefinition ability) {
+Linha 200: default:
+Linha 213: String theme = separator > 0 ? id.substring(0, separator) : "energy";
+Linha 214: int cost = energyCost(ability);
+Linha 384: default:
+Linha 441: "space", "crystal", "energy", "quantum")
+Linha 618: if (hit == null) return null;
+Linha 619: if (!(hit.getEntity() instanceof LivingEntity target)) return null;
+Linha 620: if (!player.hasLineOfSight(target)) return null;
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityCommands.java
+Linha 16: .then(Commands.argument("id", StringArgumentType.word()).suggests(br.com.skyheros.command.CatalogSuggestions::abilities)
+
+========== VOO E ANIMACAO ==========
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\flight\FlightController.java
+Tamanho em caracteres: 4248
+Linha 29: public static boolean enable(ServerPlayer player, String theme) {
+Linha 35: data.putBoolean("original_flying", abilities.flying);
+Linha 36: data.putFloat("original_flying_speed", abilities.getFlyingSpeed());
+Linha 50: public static boolean disable(ServerPlayer player) {
+Linha 60: abilities.flying = abilities.mayfly
+Linha 61: && data.getBoolean("original_flying");
+Linha 62: abilities.setFlyingSpeed(data.contains("original_flying_speed") ? data.getFloat("original_flying_speed") : 0.05F);
+Linha 76: || !abilities.flying
+Linha 77: || Math.abs(abilities.getFlyingSpeed() - speed) > 0.0001F;
+Linha 80: abilities.flying = true;
+Linha 81: abilities.setFlyingSpeed(speed);
+Linha 121: public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+Linha 138: disable(player);
+
+Arquivo: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\flight\FlightClientEvents.java
+Tamanho em caracteres: 266
+Linha 4: * A animacao do jogador agora e aplicada pelo PlayerModelFlightMixin,
+PlayerModelFlightMixin.java: NAO ENCONTRADO
+
+Arquivo build.gradle: True
+build.gradle:4: url = 'https://repo.spongepowered.org/repository/maven-public/'
+build.gradle:8: classpath 'org.spongepowered:mixingradle:0.7.+'
+build.gradle:17: apply plugin: 'org.spongepowered.mixin'
+build.gradle:19: mixin {
+build.gradle:20: add sourceSets.main, 'skyheros.refmap.json'
+build.gradle:101: property 'mixin.env.remapRefMap', 'true'
+build.gradle:102: property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+build.gradle:109: property 'mixin.env.remapRefMap', 'true'
+build.gradle:110: property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+build.gradle:124: property 'mixin.env.remapRefMap', 'true'
+build.gradle:125: property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+build.gradle:147: // ForgeGradle automatically adds the Forge maven and Maven Central for you
+build.gradle:157: annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+build.gradle:161: // The "userdev" classifier will be requested and setup by ForgeGradle.
+Mod ID: skyheros
+Configuracao Mixin skyheros.mixins.json existe: False
+
+========== LOGS E CONTAGENS EM RUNTIME ==========
+
+Log: C:\Users\srkai\Documents\Load mods mcp\Skyheros\run\logs\latest.log
+[17out.2026 21:48:58.540] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/C:/Users/srkai/.gradle/caches/modules-2/files-2.1/org.spongepowered/mixin/0.8.5/9d1c0c3a304ae6697ecd477218fa61b850bf57fc/mixin-0.8.5.jar%23128!/ Service=ModLauncher Env=CLIENT
+[17out.2026 21:48:59.718] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
+[17out.2026 21:48:59.968] [main/INFO] [mixin/]: Remapping refMap geckolib.refmap.json using C:\Users\srkai\Documents\Load mods mcp\Skyheros/build/createSrgToMcp/output.srg
+[17out.2026 21:49:05.184] [modloading-worker-0/INFO] [br.com.skyheros.SkyherosMod/]: Skyheros iniciado: 1 trajes e 900 poderes registrados.
+[17out.2026 21:49:06.122] [Worker-Main-2/ERROR] [net.minecraft.Util/]: Invalid path in pack: skyheros:geo/skyheros/Skyheros_FlightRig.bbmodel, ignoring
+
+Log: C:\Users\srkai\Documents\Load mods mcp\Skyheros\run\logs\debug.log
+[17out.2026 21:48:59.716] [main/DEBUG] [mixin/]: Compatibility level JAVA_17 specified by geckolib.mixins.json is higher than the maximum level supported by this version of mixin (JAVA_13).
+[17out.2026 21:48:59.718] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(skyheros)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(skyheros)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(skyheros)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(skyheros)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(skyheros)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(skyheros)]
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(mclib)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(mclib)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(mclib)
+[17out.2026 21:48:59.719] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(mclib)
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(mclib)
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mclib)]
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: inject() running with 6 agents
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(minecraft)]
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(forge)]
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(geckolib)]
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(skyheros)]
+[17out.2026 21:48:59.720] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mclib)]
+[17out.2026 21:48:59.787] [main/DEBUG] [mixin/]: Error cleaning class output directory: .mixin.out
+[17out.2026 21:48:59.788] [main/DEBUG] [mixin/]: Preparing mixins for MixinEnvironment[DEFAULT]
+[17out.2026 21:48:59.789] [main/DEBUG] [mixin/]: Selecting config geckolib.mixins.json
+[17out.2026 21:48:59.968] [main/INFO] [mixin/]: Remapping refMap geckolib.refmap.json using C:\Users\srkai\Documents\Load mods mcp\Skyheros/build/createSrgToMcp/output.srg
+[17out.2026 21:48:59.968] [main/DEBUG] [mixin/]: Preparing geckolib.mixins.json (1)
+[17out.2026 21:48:59.999] [main/DEBUG] [mixin/]: Registering new injector for @Inject with org.spongepowered.asm.mixin.injection.struct.CallbackInjectionInfo
+[17out.2026 21:49:00.000] [main/DEBUG] [mixin/]: Registering new injector for @ModifyArg with org.spongepowered.asm.mixin.injection.struct.ModifyArgInjectionInfo
+[17out.2026 21:49:00.000] [main/DEBUG] [mixin/]: Registering new injector for @ModifyArgs with org.spongepowered.asm.mixin.injection.struct.ModifyArgsInjectionInfo
+[17out.2026 21:49:00.001] [main/DEBUG] [mixin/]: Registering new injector for @Redirect with org.spongepowered.asm.mixin.injection.struct.RedirectInjectionInfo
+[17out.2026 21:49:00.002] [main/DEBUG] [mixin/]: Registering new injector for @ModifyVariable with org.spongepowered.asm.mixin.injection.struct.ModifyVariableInjectionInfo
+[17out.2026 21:49:00.003] [main/DEBUG] [mixin/]: Registering new injector for @ModifyConstant with org.spongepowered.asm.mixin.injection.struct.ModifyConstantInjectionInfo
+[17out.2026 21:49:05.184] [modloading-worker-0/INFO] [br.com.skyheros.SkyherosMod/]: Skyheros iniciado: 1 trajes e 900 poderes registrados.
+[17out.2026 21:49:05.464] [Render thread/DEBUG] [mixin/]: Mixing client.TextureManagerMixin from geckolib.mixins.json into net.minecraft.client.renderer.texture.TextureManager
+[17out.2026 21:49:06.122] [Worker-Main-2/ERROR] [net.minecraft.Util/]: Invalid path in pack: skyheros:geo/skyheros/Skyheros_FlightRig.bbmodel, ignoring
+
+========== TAREFAS GRADLE ==========
+gradlew tasks exit code: 0
+runClient encontrado: True
+runClient

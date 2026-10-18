@@ -1,0 +1,1925 @@
+AUDITORIA DO SKYHEROS
+Data: 2026-10-17 17:13:33
+Arquivos Java encontrados: 34
+
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityCatalog.java
+===========================================================================
+package br.com.skyheros.ability;
+
+import java.util.List;
+
+public final class AbilityCatalog {
+    private static boolean registered;
+
+    private AbilityCatalog() {}
+
+    public static synchronized void registerDefaults() {
+        if (registered) return;
+
+        // Habilidades-base com IDs estaveis para personagens e comandos existentes.
+        add("web_swing", "Balanco com teia",
+            "Usa um ponto de ancoragem para impulsionar o heroi.",
+            "WEB_SWING", List.of(), 12, 5);
+        add("web_shot", "Disparo de teia",
+            "Dispara contra uma criatura na direcao da mira.",
+            "WEB_SHOT", List.of(), 10, 3);
+        add("web_pull", "Puxao de teia",
+            "Puxa uma criatura atingida em direcao ao heroi.",
+            "WEB_PULL", List.of(), 20, 5);
+        add("web_bind", "Imobilizacao com teia",
+            "Reduz temporariamente a mobilidade de um alvo.",
+            "WEB_BIND", List.of(), 40, 8);
+        add("spider_sense", "Sentido-aranha",
+            "Melhora temporariamente mobilidade e defesa.",
+            "SPIDER_SENSE", List.of(), 100, 10);
+        add("enhanced_leap", "Salto aprimorado",
+            "Impulsiona o heroi para cima e para a frente.",
+            "ENHANCED_LEAP", List.of("enhanced_agility"), 30, 5);
+        add("super_strength", "Forca aprimorada",
+            "Concede temporariamente forca de combate adicional.",
+            "SUPER_STRENGTH", List.of("enhanced_strength"), 100, 10);
+
+        String[][] themes = {
+            {"fire","Fogo"}, {"ice","Gelo"}, {"lightning","Eletricidade"},
+            {"water","Agua"}, {"wind","Vento"}, {"earth","Terra"},
+            {"plant","Plantas"}, {"nature","Natureza"}, {"light","Luz"},
+            {"shadow","Sombras"}, {"cosmic","Energia cosmica"},
+            {"plasma","Plasma"}, {"radiation","Radiacao"}, {"sound","Som"},
+            {"gravity","Gravidade"}, {"magnetic","Magnetismo"},
+            {"psychic","Energia psiquica"}, {"magic","Magia"},
+            {"technology","Tecnologia"}, {"quantum","Energia quantica"},
+            {"space","Espaco"}, {"time","Tempo"}, {"dimension","Dimensoes"},
+            {"crystal","Cristais"}, {"metal","Metal"}, {"sand","Areia"},
+            {"lava","Lava"}, {"storm","Tempestade"}, {"solar","Energia solar"},
+            {"lunar","Energia lunar"}, {"void","Vazio"}, {"energy","Energia"},
+            {"kinetic","Energia cinetica"}, {"life","Vida"}, {"death","Morte"},
+            {"dream","Sonhos"}, {"illusion","Ilusao"}, {"blood","Sangue"},
+            {"spider","Aranha"}, {"sonic","Energia sonica"}
+        };
+
+        // Cada familia representa uma forma de habilidade reutilizavel.
+        // Os executores de todas as familias serao implementados progressivamente.
+        String[][] mechanics = {
+            {"projectile","Projetil","PROJECTILE"},
+            {"beam","Feixe","BEAM"},
+            {"burst","Rajada","BURST"},
+            {"explosion","Explosao","EXPLOSION"},
+            {"wave","Onda","WAVE"},
+            {"aura","Aura","AURA"},
+            {"shield","Escudo","SHIELD"},
+            {"barrier","Barreira","BARRIER"},
+            {"dash","Avanco","DASH"},
+            {"flight","Voo","FLIGHT"},
+            {"leap","Salto","LEAP"},
+            {"speed","Velocidade","SPEED"},
+            {"strength","Forca","STRENGTH"},
+            {"resistance","Resistencia","RESISTANCE"},
+            {"sense","Percepcao","SENSE"},
+            {"vision","Visao especial","VISION"},
+            {"healing","Cura","HEAL"},
+            {"drain","Drenagem","DRAIN"},
+            {"bind","Imobilizacao","BIND"},
+            {"pull","Atracao","PULL"},
+            {"push","Repulsao","PUSH"},
+            {"summon","Invocacao","SUMMON"},
+            {"construct","Construcao","CONSTRUCT"},
+            {"transformation","Transformacao","TRANSFORM"},
+            {"utility","Utilidade","UTILITY"}
+        };
+
+        int generated = 0;
+        final int target = 1000;
+
+        outer:
+        for (String[] theme : themes) {
+            for (String[] mechanic : mechanics) {
+                if (AbilityRegistry.size() >= target) break outer;
+
+                String id = theme[0] + "_" + mechanic[0];
+                if (AbilityRegistry.get(id).isPresent()) continue;
+
+                String name = mechanic[1] + " de " + theme[1];
+                String description = mechanic[1] + " com tema de " + theme[1]
+                    + ". Esta definicao utiliza a arquitetura modular do Skyheros.";
+
+                int cooldown = 20 + (generated % 9) * 10;
+                int energy = 3 + (generated % 8) * 2;
+
+                add(id, name, description, mechanic[2], List.of(), cooldown, energy);
+                generated++;
+            }
+        }
+
+        registered = true;
+
+        if (AbilityRegistry.size() != target) {
+            throw new IllegalStateException(
+                "Catalogo Skyheros deveria conter " + target +
+                " habilidades, mas contem " + AbilityRegistry.size()
+            );
+        }
+    }
+
+    private static void add(
+        String id,
+        String name,
+        String description,
+        String behavior,
+        List<String> powers,
+        int cooldown,
+        int energy
+    ) {
+        AbilityRegistry.register(new AbilityDefinition(
+            id, name, description, behavior, powers, cooldown, energy
+        ));
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityCommands.java
+===========================================================================
+package br.com.skyheros.ability;
+
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.RegisterCommandsEvent;
+
+public final class AbilityCommands {
+    private AbilityCommands() {}
+
+    public static void register(RegisterCommandsEvent event) {
+        event.getDispatcher().register(
+            Commands.literal("skyheros")
+                .then(Commands.literal("ability")
+                    .then(Commands.argument("id", StringArgumentType.word()).suggests(br.com.skyheros.command.CatalogSuggestions::abilities)
+                        .executes(context -> {
+                            if (!(context.getSource().getEntity() instanceof ServerPlayer player)) {
+                                context.getSource().sendFailure(Component.literal(
+                                    "Este comando deve ser usado por um jogador."
+                                ));
+                                return 0;
+                            }
+                            return AbilityRuntime.activate(
+                                player,
+                                StringArgumentType.getString(context, "id")
+                            );
+                        })
+                    )
+                )
+                .then(Commands.literal("list")
+                    .executes(context -> {
+                        String ids = AbilityRegistry.getAll().stream()
+                            .map(AbilityDefinition::id)
+                            .sorted()
+                            .limit(40)
+                            .reduce((a, b) -> a + ", " + b)
+                            .orElse("nenhuma");
+
+                        context.getSource().sendSuccess(() -> Component.literal(
+                            "Catalogo: " + AbilityAudit.totalCount()
+                                + " habilidades. Primeiras 40 por ID: " + ids
+                        ), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("catalog")
+                    .executes(context -> {
+                        context.getSource().sendSuccess(() -> Component.literal(
+                            "Skyheros | Total: " + AbilityAudit.totalCount()
+                                + " | Com executor: " + AbilityAudit.implementedCount()
+                                + " | Aguardando executor: " + AbilityAudit.pendingCount()
+                        ), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("validate")
+                    .executes(context -> {
+                        int total = AbilityAudit.totalCount();
+                        long implemented = AbilityAudit.implementedCount();
+                        long pending = AbilityAudit.pendingCount();
+                        boolean correct = total == 1000 && implemented + pending == total;
+
+                        context.getSource().sendSuccess(() -> Component.literal(
+                            (correct ? "[OK] " : "[ATENCAO] ")
+                                + "Catalogo: " + total + "/1000"
+                                + " | Executores implementados: " + implemented
+                                + " | Pendentes: " + pending
+                        ), false);
+                        return correct ? 1 : 0;
+                    })
+                )
+        );
+    }
+}
+
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityRegistry.java
+===========================================================================
+package br.com.skyheros.ability;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public final class AbilityRegistry {
+    private static final Map<String, AbilityDefinition> ABILITIES = new LinkedHashMap<>();
+
+    private AbilityRegistry() {}
+
+    public static synchronized void register(AbilityDefinition ability) {
+        if (ABILITIES.putIfAbsent(ability.id(), ability) != null) {
+            throw new IllegalArgumentException("Habilidade duplicada: " + ability.id());
+        }
+    }
+
+    public static synchronized Optional<AbilityDefinition> get(String id) {
+        return Optional.ofNullable(ABILITIES.get(id));
+    }
+
+    public static synchronized Collection<AbilityDefinition> getAll() {
+        return Collections.unmodifiableList(java.util.List.copyOf(ABILITIES.values()));
+    }
+
+    public static synchronized int size() {
+        return ABILITIES.size();
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityRuntime.java
+===========================================================================
+package br.com.skyheros.ability;
+
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+public final class AbilityRuntime {
+    private static final Map<String, Long> COOLDOWNS = new ConcurrentHashMap<>();
+
+    private AbilityRuntime() {}
+
+    public static int activate(ServerPlayer player, String id) {
+        AbilityDefinition ability = AbilityRegistry.get(id).orElse(null);
+        if (ability == null) {
+            player.sendSystemMessage(Component.literal("Habilidade desconhecida: " + id));
+            return 0;
+        }
+
+        long now = player.level().getGameTime();
+        String key = player.getUUID() + ":" + ability.id();
+        long until = COOLDOWNS.getOrDefault(key, 0L);
+
+        if (now < until) {
+            player.sendSystemMessage(Component.literal(
+                "Habilidade em recarga: " + ((until - now + 19) / 20) + " s"
+            ));
+            return 0;
+        }
+
+        boolean success = execute(player, ability.behavior());
+        if (!success) {
+            player.sendSystemMessage(Component.literal(
+                "Nao foi possivel usar " + ability.name() + ". Mire em um alvo ou bloco valido."
+            ));
+            return 0;
+        }
+
+        COOLDOWNS.put(key, now + ability.cooldownTicks());
+        player.sendSystemMessage(Component.literal("Habilidade: " + ability.name()));
+        return 1;
+    }
+
+    private static boolean execute(ServerPlayer player, String behavior) {
+        Vec3 eye = player.getEyePosition();
+        Vec3 look = player.getLookAngle();
+        Vec3 end = eye.add(look.scale(24.0D));
+
+        switch (behavior) {
+            case "WEB_SWING": {
+                BlockHitResult hit = player.level().clip(new ClipContext(
+                    eye, end, ClipContext.Block.OUTLINE,
+                    ClipContext.Fluid.NONE, player
+                ));
+                if (hit.getType() == HitResult.Type.MISS) return false;
+
+                Vec3 anchor = Vec3.atCenterOf(hit.getBlockPos());
+                Vec3 toward = anchor.subtract(player.position());
+                if (toward.lengthSqr() < 1.0D) return false;
+
+                Vec3 impulse = toward.normalize().scale(0.72D).add(0.0D, 0.28D, 0.0D);
+                player.setDeltaMovement(player.getDeltaMovement().add(impulse));
+                player.fallDistance = 0.0F;
+                player.hurtMarked = true;
+                return true;
+            }
+
+            case "WEB_SHOT":
+            case "WEB_PULL":
+            case "WEB_BIND": {
+                Entity target = findTarget(player, eye, end, look);
+                if (!(target instanceof LivingEntity living)) return false;
+
+                if ("WEB_SHOT".equals(behavior)) {
+                    living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 50, 1));
+                    return true;
+                }
+
+                if ("WEB_PULL".equals(behavior)) {
+                    Vec3 pull = player.position().subtract(living.position());
+                    if (pull.lengthSqr() < 0.01D) return false;
+                    living.setDeltaMovement(living.getDeltaMovement().add(pull.normalize().scale(0.8D)));
+                    living.hurtMarked = true;
+                    return true;
+                }
+
+                living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4));
+                living.addEffect(new MobEffectInstance(MobEffects.JUMP, 100, 128));
+                return true;
+            }
+
+            case "SPIDER_SENSE":
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 160, 1));
+                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 160, 0));
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
+                return true;
+
+            case "ENHANCED_LEAP":
+                player.setDeltaMovement(player.getDeltaMovement()
+                    .add(look.x * 0.65D, 0.85D, look.z * 0.65D));
+                player.fallDistance = 0.0F;
+                player.hurtMarked = true;
+                return true;
+
+            case "SUPER_STRENGTH":
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, 1));
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
+                return true;
+
+            default:
+                player.sendSystemMessage(Component.literal(
+                    "Esta habilidade esta cadastrada, mas seu executor ainda sera implementado: " + behavior
+                ));
+                return false;
+        }
+    }
+
+    private static Entity findTarget(ServerPlayer player, Vec3 start, Vec3 end, Vec3 look) {
+        AABB box = player.getBoundingBox()
+            .expandTowards(look.scale(24.0D))
+            .inflate(1.5D);
+
+        var result = ProjectileUtil.getEntityHitResult(
+            player,
+            start,
+            end,
+            box,
+            entity -> entity != player
+                && entity.isPickable()
+                && !entity.isSpectator()
+                && entity instanceof LivingEntity,
+            24.0D * 24.0D
+        );
+
+        return result == null ? null : result.getEntity();
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\CombatProgressionRuntime.java
+===========================================================================
+package br.com.skyheros.power;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.phys.Vec3;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+
+public final class CombatProgressionRuntime {
+    private CombatProgressionRuntime() {}
+
+    private static boolean hasAny(String text, String... terms) {
+        for (String term : terms) if (text.contains(term)) return true;
+        return false;
+    }
+
+    public static String execute(ServerPlayer player, PowerDefinition power) {
+        String id = power.getId().toLowerCase(Locale.ROOT);
+        if (!id.startsWith("combo_")) return null;
+
+        String key = (id + " " + power.getName() + " "
+                + power.getTheme() + " " + power.getMechanic() + " "
+                + power.getBehavior()).toLowerCase(Locale.ROOT);
+        String mechanic = power.getMechanic().toLowerCase(Locale.ROOT);
+        double strength = Math.max(1.0, Math.min(8.0, power.getMagnitude()));
+        Vec3 look = player.getLookAngle().normalize();
+
+        if (mechanic.equals("transformation")) {
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 240, 1));
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 240, 1));
+            return power.getName() + " ativado por 12 segundos.";
+        }
+
+        if (mechanic.equals("support")) {
+            List<ServerPlayer> allies = player.level().getEntitiesOfClass(
+                    ServerPlayer.class, player.getBoundingBox().inflate(8.0),
+                    entity -> entity.isAlive());
+            for (ServerPlayer ally : allies) {
+                if (hasAny(key, "regeneration", "revitalizing", "cleanse", "sacred")) {
+                    ally.heal(4.0F);
+                    ally.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 0));
+                }
+                if (hasAny(key, "shield", "guardian", "barrier", "sacred")) {
+                    ally.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
+                    ally.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 160, 0));
+                }
+                if (hasAny(key, "speed", "rally", "warcry", "coordination", "focus")) {
+                    ally.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 1));
+                    ally.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, 0));
+                }
+                if (hasAny(key, "cleanse")) {
+                    ally.removeEffect(MobEffects.POISON);
+                    ally.removeEffect(MobEffects.WITHER);
+                    ally.removeEffect(MobEffects.WEAKNESS);
+                    ally.removeEffect(MobEffects.BLINDNESS);
+                    ally.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+                }
+            }
+            return power.getName() + " aplicado a " + allies.size() + " jogador(es) próximo(s).";
+        }
+
+        if (mechanic.equals("defense")) {
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 240, 1));
+            player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 240, 1));
+            if (hasAny(key, "fireproof", "elemental_ward")) {
+                player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 240, 0));
+            }
+            if (hasAny(key, "frost")) {
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 160, 0));
+            }
+            if (hasAny(key, "regeneration_matrix", "auto_recovery", "adaptive_armor")) {
+                player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 160, 0));
+            }
+            return power.getName() + ": defesa reforçada por 12 segundos.";
+        }
+
+        if (mechanic.equals("passive")) {
+            if (hasAny(key, "toxin_purge")) {
+                player.removeEffect(MobEffects.POISON);
+                player.removeEffect(MobEffects.WITHER);
+                player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 0));
+            } else {
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0));
+                if (hasAny(key, "shadow", "stealth")) {
+                    player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 160, 0));
+                }
+                if (hasAny(key, "recovery")) {
+                    player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 0));
+                }
+            }
+            return power.getName() + " ativado temporariamente.";
+        }
+
+        if (mechanic.equals("movement")) {
+            if (hasAny(key, "blink", "phase_dash", "spatial_snap")) {
+                double distance = key.contains("spatial_snap") ? 10.0 : 6.0;
+                Vec3 destination = player.position().add(look.scale(distance));
+                player.teleportTo(destination.x, destination.y, destination.z);
+                player.fallDistance = 0;
+                return power.getName() + ": deslocamento executado.";
+            }
+            if (hasAny(key, "speed", "afterimage", "sonic_dash")) {
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 160, 2));
+            }
+            if (hasAny(key, "leap", "skybound", "drift", "gravity_sling")) {
+                player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 200, 0));
+                player.setDeltaMovement(player.getDeltaMovement().add(
+                        look.x * strength * 0.45, Math.max(0.5, strength * 0.18),
+                        look.z * strength * 0.45));
+                player.hurtMarked = true;
+            }
+            return power.getName() + ": movimento especial ativado.";
+        }
+
+        if (mechanic.equals("utility")) {
+            if (hasAny(key, "energy_recharge")) {
+                String restored = PowerProgressionRuntime.restoreEnergy(player, 25);
+                return "Energia restaurada. " + restored;
+            }
+            if (hasAny(key, "power_surge")) {
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 1));
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 1));
+                return "Surto de poder ativado.";
+            }
+            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0));
+            List<LivingEntity> detected = player.level().getEntitiesOfClass(
+                    LivingEntity.class, player.getBoundingBox().inflate(16.0),
+                    entity -> entity != player && entity.isAlive());
+            for (LivingEntity entity : detected) {
+                entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 120, 0));
+            }
+            return "Varredura concluída: " + detected.size() + " entidade(s) detectada(s).";
+        }
+
+        if (mechanic.equals("environment")) {
+            List<LivingEntity> nearby = player.level().getEntitiesOfClass(
+                    LivingEntity.class, player.getBoundingBox().inflate(8.0),
+                    entity -> entity != player && entity.isAlive());
+
+            if (hasAny(key, "stormfront")) {
+                player.serverLevel().setWeatherParameters(0, 600, true, true);
+            } else if (hasAny(key, "frost_domain")) {
+                for (LivingEntity entity : nearby) {
+                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3));
+                    entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 0));
+                }
+            } else if (hasAny(key, "seismic")) {
+                for (LivingEntity entity : nearby) {
+                    entity.hurt(player.damageSources().playerAttack(player), 4.0F);
+                    Vec3 away = entity.position().subtract(player.position()).normalize();
+                    entity.push(away.x, 0.45, away.z);
+                    entity.hurtMarked = true;
+                }
+            } else if (hasAny(key, "gravitational")) {
+                for (LivingEntity entity : nearby) {
+                    entity.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 50, 0));
+                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 1));
+                }
+            } else {
+                for (LivingEntity entity : nearby) {
+                    entity.setSecondsOnFire(4);
+                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1));
+                }
+            }
+            return power.getName() + " afetou a área próxima (" + nearby.size() + " criatura(s)).";
+        }
+
+        if (mechanic.equals("summon")) {
+            EntityType<? extends Mob> type = EntityType.WOLF;
+            if (hasAny(key, "iron_sentinel")) type = EntityType.IRON_GOLEM;
+            else if (hasAny(key, "skeleton_guard")) type = EntityType.SKELETON;
+            else if (hasAny(key, "swarm")) type = EntityType.BEE;
+
+            int count = hasAny(key, "pack", "swarm", "hounds") ? 3 : 1;
+            int spawned = 0;
+            for (int i = 0; i < count; i++) {
+                Mob ally = type.create(player.level());
+                if (ally == null) continue;
+                double angle = 2.0 * Math.PI * i / count;
+                ally.moveTo(player.getX() + Math.cos(angle) * 2.0,
+                        player.getY(), player.getZ() + Math.sin(angle) * 2.0,
+                        player.getYRot(), 0.0F);
+                if (ally instanceof Wolf wolf) {
+                    wolf.setOwnerUUID(player.getUUID());
+                    wolf.setTame(true);
+                }
+                if (player.level().addFreshEntity(ally)) spawned++;
+            }
+            return spawned + " aliado(s) invocado(s).";
+        }
+
+        LivingEntity target = findTarget(player, 16.0);
+
+        if (mechanic.equals("control")) {
+            if (target == null) return "Nenhum alvo na mira a até 16 blocos.";
+            if (hasAny(key, "gravity", "vortex", "telekinetic")) {
+                target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 60, 1));
+            }
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 3));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0));
+            if (hasAny(key, "repulsion")) {
+                Vec3 away = target.position().subtract(player.position()).normalize();
+                target.push(away.x * 1.5, 0.5, away.z * 1.5);
+                target.hurtMarked = true;
+            }
+            return power.getName() + " controlou " + target.getName().getString() + ".";
+        }
+
+        if (mechanic.equals("attack")) {
+            if (target == null) return "Nenhum alvo na mira a até 16 blocos.";
+
+            float damage = (float)Math.max(3.0, Math.min(20.0, strength * 2.5));
+            if (hasAny(key, "ultimate", "finisher", "annihilation", "worldbreaker",
+                    "hypernova", "collapse", "singularity")) {
+                damage = Math.min(24.0F, damage + 5.0F);
+            }
+
+            boolean hit = target.hurt(player.damageSources().playerAttack(player), damage);
+            if (!hit) return "O alvo não recebeu dano.";
+
+            if (hasAny(key, "fire", "flame", "magma", "solar", "phoenix", "steam")) {
+                target.setSecondsOnFire(5);
+            }
+            if (hasAny(key, "ice", "frost", "cryo", "zero", "glacial")) {
+                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 3));
+                target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0));
+            }
+            if (hasAny(key, "electric", "lightning", "storm", "thunder")) {
+                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 2));
+                target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0));
+            }
+            if (hasAny(key, "venom", "toxic", "blood")) {
+                target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));
+            }
+            if (hasAny(key, "shadow", "void", "entropy", "spectral")) {
+                target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+            }
+            if (hasAny(key, "drain", "vampiric")) player.heal(Math.min(5.0F, damage * 0.4F));
+
+            if (hasAny(key, "shockwave", "tsunami", "meteor", "nova", "barrage",
+                    "vortex", "hypernova", "singularity", "cascade", "wave",
+                    "collapse", "fusion", "convergence")) {
+                List<LivingEntity> others = player.level().getEntitiesOfClass(
+                        LivingEntity.class, target.getBoundingBox().inflate(3.0),
+                        entity -> entity != player && entity != target && entity.isAlive());
+                for (LivingEntity entity : others) {
+                    entity.hurt(player.damageSources().playerAttack(player), damage * 0.5F);
+                }
+            }
+            return power.getName() + " acertou " + target.getName().getString()
+                    + " e causou " + damage + " de dano.";
+        }
+
+        String universalResult = UniversalPowerRuntime.execute(player, power);
+        if (universalResult != null) return universalResult;
+        return "Combo sem executor universal.";
+    }
+
+    private static LivingEntity findTarget(ServerPlayer player, double range) {
+        Vec3 look = player.getLookAngle().normalize();
+        List<LivingEntity> entities = player.level().getEntitiesOfClass(
+                LivingEntity.class, player.getBoundingBox().inflate(range),
+                entity -> entity != player && entity.isAlive());
+        return entities.stream().filter(entity -> {
+            Vec3 diff = entity.getEyePosition().subtract(player.getEyePosition());
+            double distance = diff.length();
+            return distance > 0.1 && distance <= range
+                    && look.dot(diff.normalize()) > 0.65
+                    && player.hasLineOfSight(entity);
+        }).min(Comparator.comparingDouble(player::distanceTo)).orElse(null);
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerCommands.java
+===========================================================================
+package br.com.skyheros.power;
+
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.RegisterCommandsEvent;
+
+public final class PowerCommands {
+    private PowerCommands() {}
+
+    private static final java.util.Map<java.util.UUID, java.util.Map<String, Long>> COOLDOWNS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void register(RegisterCommandsEvent event) {
+        event.getDispatcher().register(
+            Commands.literal("skyheros")
+                .then(Commands.literal("power")
+                    .then(Commands.argument("id", StringArgumentType.greedyString())
+                        .executes(context -> {
+                            if (!(context.getSource().getEntity() instanceof ServerPlayer player)) {
+                                context.getSource().sendFailure(
+                                    Component.literal("Este comando precisa ser usado por um jogador."));
+                                return 0;
+                            }
+
+                            String requested = StringArgumentType.getString(context, "id")
+                                    .trim().toLowerCase();
+
+                            PowerDefinition selected = null;
+                            for (PowerDefinition definition : PowerRegistry.getAll()) {
+                                String id = definition.getId().toLowerCase();
+                                String shortId = id.startsWith("skyheros:")
+                                        ? id.substring("skyheros:".length()) : id;
+
+                                if (id.equals(requested) || shortId.equals(requested)
+                                        || definition.getName().equalsIgnoreCase(requested)) {
+                                    selected = definition;
+                                    break;
+                                }
+                            }
+
+                            if (selected == null) {
+                                context.getSource().sendFailure(Component.literal(
+                                    "Poder nao encontrado: " + requested
+                                    + ". Use o ID curto, como comic_fireball."));
+                                return 0;
+                            }
+
+                            long now = player.level().getGameTime();
+                            java.util.Map<String, Long> playerCooldowns =
+                                    COOLDOWNS.computeIfAbsent(player.getUUID(),
+                                        ignored -> new java.util.concurrent.ConcurrentHashMap<>());
+                            long readyAt = playerCooldowns.getOrDefault(selected.getId(), 0L);
+
+                            if (now < readyAt) {
+                                long secondsLeft = (readyAt - now + 19L) / 20L;
+                                context.getSource().sendFailure(Component.literal(
+                                    "Este poder esta em recarga. Aguarde " + secondsLeft + " s."));
+                                return 0;
+                            }
+
+                            String energyError = PowerProgressionRuntime.checkEnergy(player, selected);
+                            if (energyError != null) {
+                                context.getSource().sendFailure(Component.literal(energyError));
+                                return 0;
+                            }
+String result = PowerRuntime.execute(player, selected);
+                            String normalizedResult = java.text.Normalizer.normalize(
+                                    result == null ? "" : result,
+                                    java.text.Normalizer.Form.NFD)
+                                    .replaceAll("\\p{M}", "").toLowerCase(java.util.Locale.ROOT);
+                            boolean failed = normalizedResult.startsWith("este poder esta cadastrado")
+                                    || normalizedResult.startsWith("nenhum alvo")
+                                    || normalizedResult.startsWith("o alvo nao recebeu dano")
+                                    || normalizedResult.contains("ainda nao tem uma implementacao")
+                                    || normalizedResult.contains("ainda nao tem um efeito")
+                                    || normalizedResult.startsWith("nao foi possivel");
+
+                            if (!failed && selected.getCooldownTicks() > 0) {
+                                playerCooldowns.put(selected.getId(),
+                                        now + selected.getCooldownTicks());
+                            }
+                            String progressMessage = "";
+                            if (!failed) {
+                                progressMessage = PowerProgressionRuntime.recordSuccessfulUse(player, selected);
+                            }
+                            String displayResult = progressMessage.isEmpty() ? result : result + " | " + progressMessage;
+
+                            PowerDefinition chosen = selected;
+                            context.getSource().sendSuccess(
+                                () -> Component.literal("[" + chosen.getName() + "] " + displayResult),
+                                false
+                            );
+                            return 1;
+                        })
+                    )
+                )
+        );
+    }
+}
+
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerProgressionRuntime.java
+===========================================================================
+package br.com.skyheros.power;
+
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+
+public final class PowerProgressionRuntime {
+    private static final String KEY = "skyheros_progression";
+    private static final int MAX_ENERGY = 100;
+
+    private PowerProgressionRuntime() {}
+
+    private static CompoundTag state(ServerPlayer player) {
+        CompoundTag root = player.getPersistentData();
+        if (!root.contains(KEY)) root.put(KEY, new CompoundTag());
+        return root.getCompound(KEY);
+    }
+
+    private static void save(ServerPlayer player, CompoundTag data) {
+        player.getPersistentData().put(KEY, data);
+    }
+
+    private static int refresh(ServerPlayer player, CompoundTag data) {
+        long now = player.level().getGameTime();
+
+        if (!data.contains("energy")) data.putInt("energy", MAX_ENERGY);
+        if (!data.contains("last_energy_tick")) data.putLong("last_energy_tick", now);
+
+        long last = data.getLong("last_energy_tick");
+        long elapsed = Math.max(0L, now - last);
+        int regenerated = (int)Math.min(MAX_ENERGY, elapsed / 20L);
+        int energy = Math.min(MAX_ENERGY, data.getInt("energy") + regenerated);
+
+        data.putInt("energy", energy);
+        if (energy >= MAX_ENERGY) data.putLong("last_energy_tick", now);
+        else data.putLong("last_energy_tick", last + regenerated * 20L);
+
+        save(player, data);
+        return energy;
+    }
+
+    public static String checkEnergy(ServerPlayer player, PowerDefinition power) {
+        CompoundTag data = state(player);
+        int energy = refresh(player, data);
+        int cost = Math.max(0, Math.min(MAX_ENERGY, (int)Math.ceil(power.getEnergyCost())));
+
+        if (energy < cost) {
+            return "Energia insuficiente: " + energy + "/" + MAX_ENERGY
+                    + ". Este poder custa " + cost + ". Regenera 1 ponto por segundo.";
+        }
+        return null;
+    }
+
+    public static String restoreEnergy(ServerPlayer player, int amount) {
+        CompoundTag data = state(player);
+        int energy = refresh(player, data);
+        energy = Math.min(MAX_ENERGY, energy + Math.max(0, amount));
+        data.putInt("energy", energy);
+        data.putLong("last_energy_tick", player.level().getGameTime());
+        save(player, data);
+        return "Energia: " + energy + "/" + MAX_ENERGY + ".";
+    }
+
+    public static String recordSuccessfulUse(ServerPlayer player, PowerDefinition power) {
+        CompoundTag data = state(player);
+        int energy = refresh(player, data);
+        int cost = Math.max(0, Math.min(MAX_ENERGY, (int)Math.ceil(power.getEnergyCost())));
+        energy = Math.max(0, energy - cost);
+        data.putInt("energy", energy);
+        data.putLong("last_energy_tick", player.level().getGameTime());
+
+        String powerKey = power.getId().replace(':', '_').replace('.', '_');
+        CompoundTag mastery = data.getCompound("mastery");
+        int uses = mastery.getInt(powerKey) + 1;
+        mastery.putInt(powerKey, uses);
+        data.put("mastery", mastery);
+
+        int level = Math.min(10, 1 + uses / 10);
+        String message = "Energia " + energy + "/" + MAX_ENERGY
+                + " | Maestria " + level + " (" + uses + " usos)";
+
+        if (uses % 10 == 0) {
+            player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 1));
+            message += " | Marco de maestria alcançado!";
+        }
+
+        long now = player.level().getGameTime();
+        long previous = data.getLong("last_combo_tick");
+        int combo = (previous > 0 && now >= previous && now - previous <= 100)
+                ? data.getInt("combo_count") + 1 : 1;
+
+        data.putLong("last_combo_tick", now);
+        if (combo >= 3) {
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 80, 1));
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 80, 0));
+            data.putInt("combo_count", 0);
+            message += " | COMBO x3! Bônus de velocidade e dano por 4 segundos.";
+        } else {
+            data.putInt("combo_count", combo);
+            message += " | Combo " + combo + "/3";
+        }
+
+        save(player, data);
+        return message;
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerRegistry.java
+===========================================================================
+package br.com.skyheros.power;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+public final class PowerRegistry {
+    private static final Map<String, PowerDefinition> POWERS =
+            new LinkedHashMap<>();
+
+    private PowerRegistry() {}
+
+    public static synchronized void register(PowerDefinition power) {
+        if (power == null) {
+            throw new IllegalArgumentException("Poder nulo");
+        }
+
+        String id = power.getId().toLowerCase(Locale.ROOT);
+
+        if (POWERS.containsKey(id)) {
+            throw new IllegalArgumentException("ID de poder duplicado: " + id);
+        }
+
+        POWERS.put(id, power);
+    }
+
+    public static synchronized Optional<PowerDefinition> get(String id) {
+        if (id == null) return Optional.empty();
+        return Optional.ofNullable(POWERS.get(id.toLowerCase(Locale.ROOT)));
+    }
+
+    public static synchronized Collection<PowerDefinition> getAll() {
+        return Collections.unmodifiableList(
+                new ArrayList<>(POWERS.values()));
+    }
+
+    public static synchronized int size() {
+        return POWERS.size();
+    }
+}
+
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerRuntime.java
+===========================================================================
+package br.com.skyheros.power;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.Comparator;
+import java.util.List;
+
+public final class PowerRuntime {
+    private PowerRuntime() {}
+
+    public static String execute(ServerPlayer player, PowerDefinition power) {
+        String comboResult = CombatProgressionRuntime.execute(player, power);
+        if (comboResult != null) return comboResult;
+        String specialResult = SpecialPowerRuntime.execute(player, power);
+        if (specialResult != null) return specialResult;
+        String behavior = power.getBehavior().toLowerCase();
+        String mechanic = power.getMechanic().toLowerCase();
+        double magnitude = Math.max(1.0, Math.min(8.0, power.getMagnitude()));
+        Vec3 look = player.getLookAngle().normalize();
+
+        if (behavior.contains("flight") || mechanic.equals("flight")) {
+            player.getAbilities().mayfly = true;
+            player.getAbilities().flying = true;
+            player.onUpdateAbilities();
+            return "Voo ativado. Use o controle de voo do Minecraft.";
+        }
+
+        if (behavior.contains("teleport")) {
+            Vec3 destination = player.position().add(look.scale(5.0));
+            player.teleportTo(destination.x, destination.y, destination.z);
+            player.fallDistance = 0;
+            return "Teleporte executado.";
+        }
+
+        if (behavior.contains("dash") || behavior.contains("leap")
+                || behavior.contains("drift") || behavior.contains("wall_run")
+                || behavior.contains("gale") || behavior.contains("ember_trail")) {
+            Vec3 impulse = look.scale(magnitude * 0.55)
+                    .add(0, Math.max(0.25, magnitude * 0.16), 0);
+            player.setDeltaMovement(player.getDeltaMovement().add(impulse));
+            player.hurtMarked = true;
+            return "Impulso de movimento executado.";
+        }
+
+        if (behavior.contains("heal") || behavior.contains("regenerat")
+                || behavior.contains("regrowth")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.REGENERATION, 20 * 8, 1));
+            player.heal((float) Math.min(8.0, magnitude * 2.0));
+            return "Regeneracao ativada.";
+        }
+
+        if (behavior.contains("shield") || behavior.contains("armor")
+                || behavior.contains("resistance") || behavior.contains("guard")
+                || behavior.contains("skin") || behavior.contains("cushion")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_RESISTANCE, 20 * 10, 1));
+            return "Defesa reforcada por 10 segundos.";
+        }
+
+        if (behavior.contains("vision") || behavior.contains("sonar")
+                || behavior.contains("scan") || behavior.contains("tracking")
+                || behavior.contains("sense")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.NIGHT_VISION, 20 * 15, 0));
+            return "Percepcao aprimorada por 15 segundos.";
+        }
+
+        if (behavior.contains("strength") || behavior.contains("muscle_boost")
+                || behavior.contains("overcharge")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_BOOST, 20 * 10, 1));
+            return "Forca aumentada por 10 segundos.";
+        }
+
+        if (behavior.contains("cloak") || behavior.contains("veil")
+                || behavior.contains("invisib")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.INVISIBILITY, 20 * 8, 0));
+            return "Camuflagem ativada por 8 segundos.";
+        }
+
+        if (behavior.contains("fire_resistance")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.FIRE_RESISTANCE, 20 * 15, 0));
+            return "Resistencia ao fogo ativada.";
+        }
+
+        List<LivingEntity> targets = player.level().getEntitiesOfClass(
+                LivingEntity.class,
+                player.getBoundingBox().inflate(12.0),
+                entity -> entity != player && entity.isAlive()
+        );
+
+        LivingEntity target = targets.stream()
+                .filter(entity -> {
+                    Vec3 toTarget = entity.getEyePosition()
+                            .subtract(player.getEyePosition());
+                    double distance = toTarget.length();
+                    return distance > 0.1 && distance <= 12.0
+                            && look.dot(toTarget.normalize()) > 0.65;
+                })
+                .min(Comparator.comparingDouble(player::distanceTo))
+                .orElse(null);
+
+        boolean attackLike = behavior.contains("projectile")
+                || behavior.contains("bolt")
+                || behavior.contains("beam")
+                || behavior.contains("blast")
+                || behavior.contains("strike")
+                || behavior.contains("attack")
+                || behavior.contains("burst")
+                || behavior.contains("wave")
+                || behavior.contains("scream")
+                || behavior.contains("missile")
+                || behavior.contains("shards")
+                || behavior.contains("lance")
+                || behavior.contains("thorn")
+                || behavior.contains("meteor")
+                || behavior.contains("jet")
+                || behavior.contains("whip")
+                || behavior.contains("crush")
+                || behavior.contains("pulse")
+                || behavior.contains("push")
+                || behavior.contains("force")
+                || behavior.contains("slam");
+
+        if (attackLike) {
+            if (target == null) {
+                return "Nenhum alvo na mira. Aponte para uma criatura a ate 12 blocos.";
+            }
+
+            float damage = (float) Math.max(2.0, Math.min(12.0, magnitude * 2.0));
+            boolean damaged = target.hurt(
+                    player.damageSources().playerAttack(player), damage);
+
+            // Efeito elemental: poderes de fogo incendeiam o alvo.
+            String powerId = power.getId().toLowerCase();
+            if (damaged && (
+                    powerId.contains("fireball")
+                    || behavior.contains("fireball")
+                    || ((behavior.contains("fire")
+                        || behavior.contains("flame")
+                        || behavior.contains("burn")
+                        || behavior.contains("inferno")
+                        || behavior.contains("ember"))
+                        && attackLike))) {
+                target.setSecondsOnFire(5);
+            }
+
+            if (behavior.contains("freeze") || behavior.contains("ice")
+                    || behavior.contains("frost")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, 20 * 4, 2));
+            } else if (behavior.contains("electric")
+                    || behavior.contains("lightning")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, 20 * 2, 1));
+            }
+
+            return damaged
+                    ? "Poder acertou " + target.getName().getString()
+                        + " e causou " + damage + " de dano."
+                    : "O alvo nao recebeu dano. Pode ser invulneravel ou estar protegido.";
+        }
+
+        if (behavior.contains("bind") || behavior.contains("hold")
+                || behavior.contains("snare") || behavior.contains("immobilize")
+                || behavior.contains("slowdown")) {
+            if (target == null) {
+                return "Nenhum alvo na mira. Aponte para uma criatura a ate 12 blocos.";
+            }
+            target.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, 20 * 5, 3));
+            return "Alvo desacelerado por 5 segundos.";
+        }
+
+        String universalResult = UniversalPowerRuntime.execute(player, power);
+        if (universalResult != null) return universalResult;
+        return "Poder sem executor universal.";
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerRuntime.java
+===========================================================================
+package br.com.skyheros.power;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+
+public final class SpecialPowerRuntime {
+    private SpecialPowerRuntime() {}
+
+    private static boolean hasAny(String text, String... terms) {
+        for (String term : terms) {
+            if (text.contains(term)) return true;
+        }
+        return false;
+    }
+
+    public static String execute(ServerPlayer player, PowerDefinition power) {
+        String id = power.getId().toLowerCase(Locale.ROOT);
+        if (!id.startsWith("spec_")) return null;
+
+        String key = (id + " " + power.getName() + " "
+                + power.getMechanic() + " " + power.getBehavior())
+                .toLowerCase(Locale.ROOT);
+
+        String mechanic = power.getMechanic().toLowerCase(Locale.ROOT);
+        double magnitude = Math.max(1.0, Math.min(8.0, power.getMagnitude()));
+        Vec3 look = player.getLookAngle().normalize();
+
+        // TRANSFORMACOES: reforcos temporarios.
+        if (mechanic.equals("transformation")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_BOOST, 20 * 12, 1));
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_RESISTANCE, 20 * 12, 0));
+
+            if (hasAny(key, "speedster")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SPEED, 20 * 12, 3));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.JUMP, 20 * 12, 2));
+            }
+            if (hasAny(key, "hulk", "titan", "giant", "berserker", "rage")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.DAMAGE_BOOST, 20 * 12, 2));
+            }
+            if (hasAny(key, "phoenix", "elemental", "cosmic", "omega")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.FIRE_RESISTANCE, 20 * 12, 0));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.ABSORPTION, 20 * 12, 1));
+            }
+            if (hasAny(key, "shadow", "micro")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.INVISIBILITY, 20 * 6, 0));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SPEED, 20 * 12, 1));
+            }
+            if (hasAny(key, "diamond_skin", "adaptive_evolution")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.DAMAGE_RESISTANCE, 20 * 12, 2));
+            }
+            return power.getName() + " ativado por 12 segundos.";
+        }
+
+        // HABILIDADES PASSIVAS ATIVAVEIS.
+        if (mechanic.equals("passive")) {
+            if (hasAny(key, "aqua_breathing", "deep_sea")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.WATER_BREATHING, 20 * 30, 0));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.DOLPHINS_GRACE, 20 * 30, 0));
+                return "Adaptacao aquatica por 30 segundos.";
+            }
+            if (hasAny(key, "thermal_immunity")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.FIRE_RESISTANCE, 20 * 30, 0));
+                return "Protecao termica por 30 segundos.";
+            }
+            if (hasAny(key, "toxic_immunity", "poison_purge")) {
+                player.removeEffect(MobEffects.POISON);
+                player.removeEffect(MobEffects.WITHER);
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.REGENERATION, 20 * 5, 0));
+                return "Purificacao ativada.";
+            }
+            if (hasAny(key, "regenerative", "rapid_recovery")) {
+                player.heal(4.0F);
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.REGENERATION, 20 * 12, 1));
+                return "Recuperacao acelerada por 12 segundos.";
+            }
+            if (hasAny(key, "reflexes", "wall_crawling")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SPEED, 20 * 15, 1));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.JUMP, 20 * 15, 1));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.SLOW_FALLING, 20 * 15, 0));
+                return "Mobilidade aprimorada por 15 segundos.";
+            }
+            if (hasAny(key, "danger_instinct", "predator_senses",
+                    "xray_perception", "magnetic_sense")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.NIGHT_VISION, 20 * 20, 0));
+                List<LivingEntity> sensed = player.level().getEntitiesOfClass(
+                        LivingEntity.class, player.getBoundingBox().inflate(16.0),
+                        entity -> entity != player && entity.isAlive());
+                for (LivingEntity entity : sensed) {
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.GLOWING, 20 * 6, 0));
+                }
+                return "Sentidos aprimorados. Entidades detectadas: "
+                        + sensed.size() + ".";
+            }
+            if (hasAny(key, "kinetic_absorption", "energy_reserves")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.ABSORPTION, 20 * 15, 2));
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.DAMAGE_RESISTANCE, 20 * 10, 0));
+                return "Reserva defensiva ativada.";
+            }
+            if (hasAny(key, "night_stalker", "silent_movement")) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.INVISIBILITY, 20 * 8, 0));
+                return "Camuflagem ativada por 8 segundos.";
+            }
+            if (hasAny(key, "mind_shield", "status_immunity")) {
+                player.removeEffect(MobEffects.BLINDNESS);
+                player.removeEffect(MobEffects.WEAKNESS);
+                player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+                player.removeEffect(MobEffects.POISON);
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.DAMAGE_RESISTANCE, 20 * 10, 0));
+                return "Protecao contra efeitos negativos ativada.";
+            }
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_RESISTANCE, 20 * 10, 0));
+            return "Habilidade passiva ativada.";
+        }
+
+        // MOVIMENTO E TELEPORTE.
+        if (hasAny(key, "short_range_blink", "long_range_blink",
+                "rift_jump", "portal_step", "dimensional_shift",
+                "pocket_dimension", "phasing_step")) {
+            double distance = key.contains("long_range_blink") ? 16.0 : 8.0;
+            Vec3 destination = player.position().add(look.scale(distance));
+            player.teleportTo(destination.x, destination.y, destination.z);
+            player.fallDistance = 0;
+            return "Deslocamento espacial executado.";
+        }
+
+        if (hasAny(key, "super_sprint", "speed_force_dash")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SPEED, 20 * 8, 2));
+            player.setDeltaMovement(player.getDeltaMovement().add(
+                    look.x * magnitude * 0.5, 0.15, look.z * magnitude * 0.5));
+            player.hurtMarked = true;
+            return "Impulso de supervelocidade executado.";
+        }
+
+        if (hasAny(key, "air_glide", "mega_leap", "gravity_leap",
+                "wall_runner", "aerial_dive", "air_dash")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.SLOW_FALLING, 20 * 8, 0));
+            player.setDeltaMovement(player.getDeltaMovement().add(
+                    look.x * magnitude * 0.45,
+                    Math.max(0.35, magnitude * 0.15),
+                    look.z * magnitude * 0.45));
+            player.hurtMarked = true;
+            return "Movimento especial executado.";
+        }
+
+        // DEFESA E CONSTRUTOS.
+        if (mechanic.equals("defense")
+                || hasAny(key, "energy_construct", "force_construct")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_RESISTANCE, 20 * 12, 1));
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.ABSORPTION, 20 * 12, 1));
+            return "Protecao temporaria ativada.";
+        }
+
+        if (hasAny(key, "astral_projection")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.INVISIBILITY, 20 * 8, 0));
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.SLOW_FALLING, 20 * 12, 0));
+            return "Projecao astral simulada ativada.";
+        }
+
+        if (hasAny(key, "phase_shift", "phase_cloak", "invisibility_field",
+                "decoy_cloak")) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.INVISIBILITY, 20 * 8, 0));
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.DAMAGE_RESISTANCE, 20 * 5, 0));
+            return "Camuflagem e protecao temporarias ativadas.";
+        }
+
+        // CLIMA.
+        if (mechanic.equals("environment")) {
+            if (hasAny(key, "storm_call", "lightning_storm_domain", "rain_domain")) {
+                boolean thunder = !key.contains("rain_domain");
+                player.serverLevel().setWeatherParameters(0, 20 * 30, true, thunder);
+                return thunder
+                        ? "Tempestade ativada por aproximadamente 30 segundos."
+                        : "Chuva ativada por aproximadamente 30 segundos.";
+            }
+
+            List<LivingEntity> nearby = player.level().getEntitiesOfClass(
+                    LivingEntity.class, player.getBoundingBox().inflate(8.0),
+                    entity -> entity != player && entity.isAlive());
+
+            if (hasAny(key, "fog_domain", "sandstorm_domain")) {
+                for (LivingEntity entity : nearby) {
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.BLINDNESS, 20 * 4, 0));
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, 20 * 4, 1));
+                }
+            } else if (hasAny(key, "blizzard_domain")) {
+                for (LivingEntity entity : nearby) {
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, 20 * 6, 3));
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.WEAKNESS, 20 * 5, 0));
+                }
+            } else if (hasAny(key, "heatwave_domain")) {
+                for (LivingEntity entity : nearby) entity.setSecondsOnFire(5);
+            } else if (hasAny(key, "time_stop", "temporal_stasis", "time_dilation")) {
+                for (LivingEntity entity : nearby) {
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, 20 * 4, 4));
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.WEAKNESS, 20 * 4, 0));
+                }
+            } else if (hasAny(key, "gravity_field", "low_gravity_field")) {
+                for (LivingEntity entity : nearby) {
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.LEVITATION, 20 * 2, 0));
+                    entity.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, 20 * 4, 1));
+                }
+            } else if (hasAny(key, "magnetic_field")) {
+                for (LivingEntity entity : nearby) {
+                    Vec3 toward = player.position()
+                            .subtract(entity.position()).normalize();
+                    entity.push(toward.x * 0.7, 0.15, toward.z * 0.7);
+                    entity.hurtMarked = true;
+                }
+            } else if (hasAny(key, "earthquake_pulse", "seismic_domain")) {
+                for (LivingEntity entity : nearby) {
+                    entity.hurt(player.damageSources().playerAttack(player), 4.0F);
+                    Vec3 away = entity.position()
+                            .subtract(player.position()).normalize();
+                    entity.push(away.x * 1.1, 0.5, away.z * 1.1);
+                    entity.hurtMarked = true;
+                }
+            }
+            return "Efeito ambiental aplicado a " + nearby.size() + " criatura(s).";
+        }
+
+        // INVOCACOES: criaturas nativas como aliados.
+        if (mechanic.equals("summon")) {
+            EntityType<? extends Mob> type = EntityType.WOLF;
+            if (hasAny(key, "iron_golem", "guardian_golem", "golem")) {
+                type = EntityType.IRON_GOLEM;
+            } else if (hasAny(key, "snow_golem")) {
+                type = EntityType.SNOW_GOLEM;
+            } else if (hasAny(key, "skeleton", "archer", "bone_legion")) {
+                type = EntityType.SKELETON;
+            } else if (hasAny(key, "bee", "swarm")) {
+                type = EntityType.BEE;
+            }
+
+            int count = hasAny(key, "horde", "legion", "swarm",
+                    "pack", "archers", "guardians") ? 3 : 1;
+            int spawned = 0;
+
+            for (int i = 0; i < count; i++) {
+                Mob ally = type.create(player.level());
+                if (ally == null) continue;
+
+                double angle = 2.0 * Math.PI * i / count;
+                ally.moveTo(player.getX() + Math.cos(angle) * 2.0,
+                        player.getY(), player.getZ() + Math.sin(angle) * 2.0,
+                        player.getYRot(), 0.0F);
+
+                if (ally instanceof Wolf wolf) {
+                    wolf.setOwnerUUID(player.getUUID());
+                    wolf.setTame(true);
+                }
+
+                if (player.level().addFreshEntity(ally)) spawned++;
+            }
+
+            return spawned > 0
+                    ? spawned + " aliado(s) invocado(s)."
+                    : "Nao foi possivel invocar criaturas.";
+        }
+
+        // ALVO PARA CONTROLE E COMBATE.
+        LivingEntity target = findTarget(player, 16.0);
+
+        if (mechanic.equals("control")) {
+            if (target == null) return "Nenhum alvo na mira.";
+            if (key.contains("gravity_reverse")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.LEVITATION, 20 * 3, 1));
+            } else {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, 20 * 5, 3));
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.WEAKNESS, 20 * 4, 0));
+            }
+            return "Controle aplicado a " + target.getName().getString() + ".";
+        }
+
+        // ATAQUES ESPECIAIS.
+        if (mechanic.equals("attack")) {
+            if (target == null) return "Nenhum alvo na mira a ate 16 blocos.";
+
+            float damage = (float) Math.max(2.0, Math.min(18.0, magnitude * 2.0));
+            boolean hit = target.hurt(
+                    player.damageSources().playerAttack(player), damage);
+
+            if (!hit) return "O alvo nao recebeu dano.";
+
+            if (hasAny(key, "fire", "flame", "phoenix", "solar_flare",
+                    "plasma_storm", "inferno")) {
+                target.setSecondsOnFire(5);
+            }
+            if (hasAny(key, "ice", "frost", "blizzard", "glacial", "zero")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, 20 * 5, 3));
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.WEAKNESS, 20 * 4, 0));
+            }
+            if (hasAny(key, "lightning", "thunder", "electric", "neutron")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, 20 * 3, 2));
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.WEAKNESS, 20 * 3, 0));
+            }
+            if (hasAny(key, "sonic", "fear", "neural_shock")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.WEAKNESS, 20 * 4, 0));
+            }
+            if (hasAny(key, "gravity", "black_hole", "telekinetic")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, 20 * 5, 3));
+                Vec3 away = target.position().subtract(player.position()).normalize();
+                target.push(away.x * 0.8, 0.3, away.z * 0.8);
+                target.hurtMarked = true;
+            }
+            if (hasAny(key, "vampiric", "energy_drain", "lifesteal")) {
+                player.heal(Math.min(4.0F, damage * 0.35F));
+            }
+            if (hasAny(key, "toxic", "acid", "venom")) {
+                target.addEffect(new MobEffectInstance(
+                        MobEffects.POISON, 20 * 5, 0));
+            }
+
+            if (hasAny(key, "nova", "meteor", "bomb", "storm",
+                    "quantum_blast", "antimatter", "barrage")) {
+                List<LivingEntity> nearby = player.level().getEntitiesOfClass(
+                        LivingEntity.class, target.getBoundingBox().inflate(3.0),
+                        entity -> entity != player && entity != target && entity.isAlive());
+                for (LivingEntity entity : nearby) {
+                    entity.hurt(player.damageSources().playerAttack(player), damage * 0.5F);
+                }
+            }
+
+            return power.getName() + " acertou " + target.getName().getString()
+                    + " e causou " + damage + " de dano.";
+        }
+
+        return null;
+    }
+
+    private static LivingEntity findTarget(ServerPlayer player, double range) {
+        Vec3 look = player.getLookAngle().normalize();
+        List<LivingEntity> entities = player.level().getEntitiesOfClass(
+                LivingEntity.class,
+                player.getBoundingBox().inflate(range),
+                entity -> entity != player && entity.isAlive()
+        );
+
+        return entities.stream()
+                .filter(entity -> {
+                    Vec3 difference = entity.getEyePosition()
+                            .subtract(player.getEyePosition());
+                    double distance = difference.length();
+                    return distance > 0.1 && distance <= range
+                            && look.dot(difference.normalize()) > 0.65
+                            && player.hasLineOfSight(entity);
+                })
+                .min(Comparator.comparingDouble(player::distanceTo))
+                .orElse(null);
+    }
+}
+
+===========================================================================
+ARQUIVO: C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\UniversalPowerRuntime.java
+===========================================================================
+package br.com.skyheros.power;
+
+import java.util.List;
+import java.util.Locale;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+public final class UniversalPowerRuntime {
+    private UniversalPowerRuntime() {}
+
+    public static String execute(ServerPlayer player, PowerDefinition power) {
+        if (player == null || power == null) return null;
+
+        String id = lower(power.getId());
+        String name = lower(power.getName());
+        String theme = lower(power.getTheme());
+        String mechanic = lower(power.getMechanic());
+        String behavior = lower(power.getBehavior());
+
+        String text = id + " " + name + " " + theme + " "
+            + mechanic + " " + behavior;
+
+        double magnitude = clamp(power.getMagnitude(), 1.0, 20.0);
+        float damage = (float) clamp(magnitude * 1.4, 2.0, 18.0);
+        int amplifier = (int) clamp(Math.floor(magnitude / 5.0), 0, 2);
+        int duration = (int) clamp(120 + power.getCooldownTicks() / 2.0, 100, 600);
+
+        if (hasAny(text, "summon", "invoc", "sentinel", "construct")) {
+            return summonGuardian(player);
+        }
+
+        if (hasAny(text, "team_regeneration", "team healing", "team_heal")
+                || hasAny(mechanic, "heal", "healing", "regeneration", "recovery")
+                || hasAny(text, "rejuvenation", "restoration", "lifebloom")) {
+            return heal(player, text, duration, amplifier, magnitude);
+        }
+
+        if (hasAny(mechanic, "shield", "barrier", "guard", "armor", "defense")
+                || hasAny(text, "protection", "defensive aura", "defense field")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.DAMAGE_RESISTANCE, duration, Math.min(2, amplifier)));
+            player.addEffect(new MobEffectInstance(
+                MobEffects.ABSORPTION, duration, Math.min(2, amplifier)));
+            applyTheme(player, theme, duration, amplifier);
+            return power.getName() + ": protecao e absorcao ativadas.";
+        }
+
+        if ("scan".equals(mechanic)
+                || hasAny(mechanic, "sense", "perception", "detect")
+                || hasAny(text, "enhanced vision", "super senses", "perception")) {
+            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, duration, 0));
+
+            List<LivingEntity> nearby = player.level().getEntitiesOfClass(
+                LivingEntity.class,
+                player.getBoundingBox().inflate(16.0),
+                entity -> entity != player && entity.isAlive()
+            );
+
+            int detected = 0;
+            for (LivingEntity entity : nearby) {
+                entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0));
+                detected++;
+            }
+
+            return power.getName() + ": percepcao ativada; entidades detectadas: "
+                + detected + ".";
+        }
+
+        if (hasAny(mechanic, "dash", "surge", "overdrive", "mobility", "velocity")
+                || hasAny(text, "super speed", "movement", "flight", "teleport", "phase shift")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SPEED, duration, Math.min(3, amplifier + 1)));
+            player.addEffect(new MobEffectInstance(
+                MobEffects.JUMP, duration, Math.min(2, amplifier)));
+            player.addEffect(new MobEffectInstance(
+                MobEffects.SLOW_FALLING, duration, 0));
+
+            Vec3 look = player.getLookAngle().normalize();
+            double boost = clamp(0.45 + magnitude * 0.06, 0.5, 1.8);
+
+            player.setDeltaMovement(
+                player.getDeltaMovement().add(
+                    look.x * boost,
+                    Math.max(0.15, look.y * boost + 0.15),
+                    look.z * boost
+                )
+            );
+
+            applyTheme(player, theme, duration, amplifier);
+            return power.getName() + ": impulso e mobilidade ativados.";
+        }
+
+        if (hasAny(mechanic, "bind", "control", "stasis", "snare", "freeze")
+                || hasAny(text, "mind_control", "time_stop", "paralyze", "web trap")) {
+            LivingEntity target = getTarget(player, 16.0);
+
+            if (target == null) {
+                return "Nenhum alvo na mira. Aponte para uma criatura a ate 16 blocos.";
+            }
+
+            target.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SLOWDOWN, duration, Math.min(5, amplifier + 2)));
+            target.addEffect(new MobEffectInstance(
+                MobEffects.WEAKNESS, Math.min(duration, 200), amplifier));
+
+            if (hasAny(text, "gravity", "levitation")) {
+                target.addEffect(new MobEffectInstance(
+                    MobEffects.LEVITATION, 50, Math.min(2, amplifier)));
+            }
+
+            applyTargetTheme(target, theme);
+            return power.getName() + " controlou " + target.getName().getString() + ".";
+        }
+
+        if (hasAny(mechanic, "nova", "wave", "barrage", "field", "ultimate",
+                "blast", "pulse")) {
+            List<LivingEntity> nearby = player.level().getEntitiesOfClass(
+                LivingEntity.class,
+                player.getBoundingBox().inflate(6.0),
+                entity -> entity != player && entity.isAlive() && !entity.isAlliedTo(player)
+            );
+
+            int hits = 0;
+            for (LivingEntity entity : nearby) {
+                if (entity.hurt(player.damageSources().playerAttack(player), damage)) {
+                    applyTargetTheme(entity, theme);
+                    hits++;
+                }
+            }
+
+            applyTheme(player, theme, 100, amplifier);
+            return power.getName() + ": ataque em area; alvos atingidos: " + hits + ".";
+        }
+
+        if (hasAny(mechanic, "bolt", "beam", "strike", "drain")
+                || power.requiresTarget()
+                || hasAny(text, "projectile", "laser attack", "energy attack")) {
+            LivingEntity target = getTarget(player, 16.0);
+
+            if (target == null) {
+                return "Nenhum alvo na mira. Aponte para uma criatura a ate 16 blocos.";
+            }
+
+            boolean hit = target.hurt(
+                player.damageSources().playerAttack(player), damage);
+
+            if (!hit) {
+                return "O alvo nao recebeu dano.";
+            }
+
+            applyTargetTheme(target, theme);
+
+            if ("drain".equals(mechanic) || hasAny(text, "vampiric", "life drain")) {
+                player.heal(Math.min(6.0F, damage * 0.4F));
+            }
+
+            return power.getName() + " acertou "
+                + target.getName().getString() + " causando " + damage + " de dano.";
+        }
+
+        if ("focus".equals(mechanic) || hasAny(text, "overcharge", "power focus")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.DAMAGE_BOOST, duration, Math.min(2, amplifier)));
+            player.addEffect(new MobEffectInstance(
+                MobEffects.DIG_SPEED, duration, Math.min(2, amplifier)));
+            applyTheme(player, theme, duration, amplifier);
+            return power.getName() + ": foco e potencia ampliados.";
+        }
+
+        // Fallback funcional: nenhuma habilidade catalogada fica sem efeito.
+        player.addEffect(new MobEffectInstance(
+            MobEffects.ABSORPTION, duration, Math.min(2, amplifier)));
+        player.addEffect(new MobEffectInstance(
+            MobEffects.DAMAGE_BOOST, Math.min(duration, 200), amplifier));
+
+        applyTheme(player, theme, duration, amplifier);
+        return power.getName() + ": surto de poder ativado.";
+    }
+
+    private static String heal(
+            ServerPlayer player, String text, int duration,
+            int amplifier, double magnitude) {
+
+        boolean team = hasAny(text, "team", "ally", "allies", "group");
+        int affected = 0;
+
+        if (team) {
+            List<ServerPlayer> allies = player.level().getEntitiesOfClass(
+                ServerPlayer.class,
+                player.getBoundingBox().inflate(8.0),
+                entity -> entity.isAlive()
+            );
+
+            for (ServerPlayer ally : allies) {
+                ally.heal((float) Math.min(8.0, Math.max(2.0, magnitude)));
+                ally.addEffect(new MobEffectInstance(
+                    MobEffects.REGENERATION, duration, Math.min(2, amplifier)));
+                affected++;
+            }
+
+            return "Restauracao de equipe aplicada a " + affected + " jogador(es).";
+        }
+
+        player.heal((float) Math.min(8.0, Math.max(2.0, magnitude)));
+        player.addEffect(new MobEffectInstance(
+            MobEffects.REGENERATION, duration, Math.min(2, amplifier)));
+
+        return "Recuperacao e regeneracao ativadas.";
+    }
+
+    private static String summonGuardian(ServerPlayer player) {
+        IronGolem ally = EntityType.IRON_GOLEM.create(player.level());
+
+        if (ally == null) {
+            return "Nao foi possivel criar o guardiao neste momento.";
+        }
+
+        Vec3 look = player.getLookAngle().normalize();
+
+        ally.moveTo(
+            player.getX() + look.x * 2.5,
+            player.getY(),
+            player.getZ() + look.z * 2.5,
+            player.getYRot(),
+            0.0F
+        );
+
+        ally.setPlayerCreated(true);
+        ally.setPersistenceRequired();
+
+        if (player.level().addFreshEntity(ally)) {
+            return "Guardiao invocado com sucesso.";
+        }
+
+        return "A invocacao falhou. Tente novamente em uma area livre.";
+    }
+
+    private static LivingEntity getTarget(ServerPlayer player, double range) {
+        HitResult hit = player.pick(range, 1.0F, false);
+
+        if (hit.getType() != HitResult.Type.ENTITY) return null;
+        if (!(hit instanceof EntityHitResult entityHit)) return null;
+
+        if (!(entityHit.getEntity() instanceof LivingEntity target)) return null;
+        if (target == player || !target.isAlive()) return null;
+
+        return target;
+    }
+
+    private static void applyTargetTheme(LivingEntity target, String theme) {
+        if (hasAny(theme, "fire", "solar", "plasma", "heat")) {
+            target.setSecondsOnFire(5);
+        }
+
+        if (hasAny(theme, "ice", "frost", "cold")) {
+            target.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SLOWDOWN, 120, 2));
+        }
+
+        if (hasAny(theme, "storm", "lightning", "electric")) {
+            target.addEffect(new MobEffectInstance(
+                MobEffects.WEAKNESS, 100, 0));
+            target.addEffect(new MobEffectInstance(
+                MobEffects.GLOWING, 80, 0));
+        }
+
+        if (hasAny(theme, "nature", "toxic", "venom")) {
+            target.addEffect(new MobEffectInstance(
+                MobEffects.POISON, 100, 0));
+        }
+
+        if (hasAny(theme, "shadow", "void")) {
+            target.addEffect(new MobEffectInstance(
+                MobEffects.BLINDNESS, 60, 0));
+        }
+    }
+
+    private static void applyTheme(
+            ServerPlayer player, String theme, int duration, int amplifier) {
+
+        if (hasAny(theme, "fire", "solar", "plasma")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.FIRE_RESISTANCE, duration, 0));
+        }
+
+        if (hasAny(theme, "ice", "frost", "cosmic")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.DAMAGE_RESISTANCE, duration, 0));
+        }
+
+        if (hasAny(theme, "storm", "kinetic")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SPEED, duration, Math.min(2, amplifier)));
+        }
+
+        if (hasAny(theme, "shadow")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.INVISIBILITY, Math.min(duration, 160), 0));
+        }
+
+        if (hasAny(theme, "radiant", "nature")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.REGENERATION, Math.min(duration, 240), 0));
+        }
+
+        if (hasAny(theme, "cosmic", "radiant")) {
+            player.addEffect(new MobEffectInstance(
+                MobEffects.SLOW_FALLING, duration, 0));
+        }
+    }
+
+    private static String lower(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean hasAny(String text, String... terms) {
+        for (String term : terms) {
+            if (text.contains(term)) return true;
+        }
+        return false;
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+}
+
+===========================================================================
+REFERENCIAS A SANGUE E PODERES COSMICOS
+===========================================================================
+
+=== REFERENCIAS A SANGUE E PODERES COSMICOS ===
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityCatalog.java:40: {"shadow","Sombras"}, {"cosmic","Energia cosmica"},
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\ability\AbilityCatalog.java:50: {"dream","Sonhos"}, {"illusion","Ilusao"}, {"blood","Sangue"},
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\AdvancedPowerCatalog.java:7: "cosmic", "fire", "ice", "storm",
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\CombatProgressionRuntime.java:238: if (hasAny(key, "venom", "toxic", "blood")) {
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\CombatProgressionRuntime.java:244: if (hasAny(key, "drain", "vampiric")) player.heal(Math.min(5.0F, damage * 0.4F));
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\ComboPowerCatalog.java:15: "cosmic", "nova", "area_blast", 600, 50.0, 14.0, false);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\ComboPowerCatalog.java:21: "cosmic", "focus", "energy_recharge", 240, 20.0, 7.0, false);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\ComboPowerCatalog.java:63: "cosmic", "strike", "target_attack", 240, 30.0, 10.0, true);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\ComicPowerCatalog.java:110: {"comic_cosmic_aura","Cosmic Aura","space","aura","cosmic_aura","160","22","3.0","false"},
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\PowerCatalog.java:17: {"cosmic", "Energia cósmica", "1.2"},
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerCatalog.java:16: add("spec_cosmic_avatar", "Cosmic Avatar", "cosmic", "transformation", "cosmic_avatar", 300, 32, 8, false);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerCatalog.java:27: add("spec_omega_state", "Omega State", "cosmic", "transformation", "omega_state", 320, 36, 8, false);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerCatalog.java:94: add("spec_astral_projection", "Astral Projection", "psychic", "utility", "astral_projection", 220, 22, 6, false);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerCatalog.java:108: add("spec_omega_beam", "Omega Beam", "cosmic", "attack", "omega_beam", 180, 20, 8, true);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerCatalog.java:113: add("spec_antimatter_ray", "Antimatter Ray", "cosmic", "attack", "antimatter_ray", 220, 25, 8, true);
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerRuntime.java:55: if (hasAny(key, "phoenix", "elemental", "cosmic", "omega")) {
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerRuntime.java:192: if (hasAny(key, "astral_projection")) {
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerRuntime.java:197: return "Projecao astral simulada ativada.";
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\SpecialPowerRuntime.java:365: if (hasAny(key, "vampiric", "energy_drain", "lifesteal")) {
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\UniversalPowerRuntime.java:161: if ("drain".equals(mechanic) || hasAny(text, "vampiric", "life drain")) {
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\UniversalPowerRuntime.java:294: if (hasAny(theme, "ice", "frost", "cosmic")) {
+C:\Users\srkai\Documents\Load mods mcp\Skyheros\src\main\java\br\com\skyheros\power\UniversalPowerRuntime.java:314: if (hasAny(theme, "cosmic", "radiant")) {
